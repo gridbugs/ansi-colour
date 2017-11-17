@@ -121,16 +121,16 @@ impl GreyScaleColour {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ColourType {
+pub enum ColourVariant {
     Normal(NormalColour),
     Bright(BrightColour),
     Rgb(RgbColour),
     GreyScale(GreyScaleColour),
 }
 
-impl ColourType {
+impl ColourVariant {
     pub fn code(self) -> u8 {
-        use self::ColourType::*;
+        use self::ColourVariant::*;
         match self {
             Normal(c) => c.code(),
             Bright(c) => c.code(),
@@ -160,25 +160,26 @@ impl Colour {
         Colour(bright_colour.code())
     }
     pub fn code(self) -> u8 { self.0 }
-    pub fn typ(self) -> ColourType {
+    pub fn from_code(code: u8) -> Self { Colour(code) }
+    pub fn typ(self) -> ColourVariant {
         use self::raw::*;
         match self.0 {
-            normal::BLACK => ColourType::Normal(NormalColour::Black),
-            normal::RED => ColourType::Normal(NormalColour::Red),
-            normal::GREEN => ColourType::Normal(NormalColour::Green),
-            normal::YELLOW => ColourType::Normal(NormalColour::Yellow),
-            normal::BLUE => ColourType::Normal(NormalColour::Blue),
-            normal::MAGENTA => ColourType::Normal(NormalColour::Magenta),
-            normal::CYAN => ColourType::Normal(NormalColour::Cyan),
-            normal::GREY => ColourType::Normal(NormalColour::Grey),
-            bright::DARK_GREY => ColourType::Bright(BrightColour::DarkGrey),
-            bright::RED => ColourType::Bright(BrightColour::Red),
-            bright::GREEN => ColourType::Bright(BrightColour::Green),
-            bright::YELLOW => ColourType::Bright(BrightColour::Yellow),
-            bright::BLUE => ColourType::Bright(BrightColour::Blue),
-            bright::MAGENTA => ColourType::Bright(BrightColour::Magenta),
-            bright::CYAN => ColourType::Bright(BrightColour::Cyan),
-            bright::WHITE => ColourType::Bright(BrightColour::White),
+            normal::BLACK => ColourVariant::Normal(NormalColour::Black),
+            normal::RED => ColourVariant::Normal(NormalColour::Red),
+            normal::GREEN => ColourVariant::Normal(NormalColour::Green),
+            normal::YELLOW => ColourVariant::Normal(NormalColour::Yellow),
+            normal::BLUE => ColourVariant::Normal(NormalColour::Blue),
+            normal::MAGENTA => ColourVariant::Normal(NormalColour::Magenta),
+            normal::CYAN => ColourVariant::Normal(NormalColour::Cyan),
+            normal::GREY => ColourVariant::Normal(NormalColour::Grey),
+            bright::DARK_GREY => ColourVariant::Bright(BrightColour::DarkGrey),
+            bright::RED => ColourVariant::Bright(BrightColour::Red),
+            bright::GREEN => ColourVariant::Bright(BrightColour::Green),
+            bright::YELLOW => ColourVariant::Bright(BrightColour::Yellow),
+            bright::BLUE => ColourVariant::Bright(BrightColour::Blue),
+            bright::MAGENTA => ColourVariant::Bright(BrightColour::Magenta),
+            bright::CYAN => ColourVariant::Bright(BrightColour::Cyan),
+            bright::WHITE => ColourVariant::Bright(BrightColour::White),
             RGB_START...RGB_END => {
                 let zero_based = self.0 - RGB_START;
                 let blue = zero_based % RGB_FIELD_RANGE;
@@ -186,24 +187,27 @@ impl Colour {
                 let green = zero_based % RGB_FIELD_RANGE;
                 let zero_based = zero_based / RGB_FIELD_RANGE;
                 let red = zero_based % RGB_FIELD_RANGE;
-                ColourType::Rgb(RgbColour{ red, green, blue })
+                ColourVariant::Rgb(RgbColour{ red, green, blue })
             }
             GREYSCALE_START...255 => {
                 let zero_based = self.0 - GREYSCALE_START;
-                ColourType::GreyScale(GreyScaleColour(zero_based))
+                ColourVariant::GreyScale(GreyScaleColour(zero_based))
             }
             _ => unreachable!(),
         }
     }
+    pub fn all() -> ColourIter {
+        ColourIter::new()
+    }
 }
 
-impl From<ColourType> for Colour {
-    fn from(t: ColourType) -> Self {
+impl From<ColourVariant> for Colour {
+    fn from(t: ColourVariant) -> Self {
         t.colour()
     }
 }
 
-impl From<Colour> for ColourType {
+impl From<Colour> for ColourVariant {
     fn from(c: Colour) -> Self {
         c.typ()
     }
@@ -221,7 +225,32 @@ impl From<u8> for Colour {
     }
 }
 
-pub mod raw {
+pub struct ColourIter(::std::ops::Range<u16>);
+
+impl ColourIter {
+    fn new() -> Self {
+        ColourIter(0..256)
+    }
+}
+
+impl Iterator for ColourIter {
+    type Item = Colour;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|i| Colour(i as u8))
+    }
+}
+
+pub struct AllColours;
+
+impl IntoIterator for AllColours {
+    type Item = Colour;
+    type IntoIter = ColourIter;
+    fn into_iter(self) -> Self::IntoIter {
+        ColourIter::new()
+    }
+}
+
+mod raw {
     pub mod normal {
         pub const BLACK: u8 = 0;
         pub const RED: u8 = 1;
@@ -244,41 +273,45 @@ pub mod raw {
     }
 }
 
-pub const BLACK: Colour = Colour(self::raw::normal::BLACK);
-pub const RED: Colour = Colour(self::raw::normal::RED);
-pub const GREEN: Colour = Colour(self::raw::normal::GREEN);
-pub const YELLOW: Colour = Colour(self::raw::normal::YELLOW);
-pub const BLUE: Colour = Colour(self::raw::normal::BLUE);
-pub const MAGENTA: Colour = Colour(self::raw::normal::MAGENTA);
-pub const CYAN: Colour = Colour(self::raw::normal::CYAN);
-pub const GREY: Colour = Colour(self::raw::normal::GREY);
+pub mod colours {
 
-pub const DARK_GREY: Colour = Colour(self::raw::bright::DARK_GREY);
-pub const BRIGHT_RED: Colour = Colour(self::raw::bright::RED);
-pub const BRIGHT_GREEN: Colour = Colour(self::raw::bright::GREEN);
-pub const BRIGHT_YELLOW: Colour = Colour(self::raw::bright::YELLOW);
-pub const BRIGHT_BLUE: Colour = Colour(self::raw::bright::BLUE);
-pub const BRIGHT_MAGENTA: Colour = Colour(self::raw::bright::MAGENTA);
-pub const BRIGHT_CYAN: Colour = Colour(self::raw::bright::CYAN);
-pub const WHITE: Colour = Colour(self::raw::bright::WHITE);
+    use Colour;
+    use raw;
+
+    pub const BLACK: Colour = Colour(self::raw::normal::BLACK);
+    pub const RED: Colour = Colour(self::raw::normal::RED);
+    pub const GREEN: Colour = Colour(self::raw::normal::GREEN);
+    pub const YELLOW: Colour = Colour(self::raw::normal::YELLOW);
+    pub const BLUE: Colour = Colour(self::raw::normal::BLUE);
+    pub const MAGENTA: Colour = Colour(self::raw::normal::MAGENTA);
+    pub const CYAN: Colour = Colour(self::raw::normal::CYAN);
+    pub const GREY: Colour = Colour(self::raw::normal::GREY);
+
+    pub const DARK_GREY: Colour = Colour(self::raw::bright::DARK_GREY);
+    pub const BRIGHT_RED: Colour = Colour(self::raw::bright::RED);
+    pub const BRIGHT_GREEN: Colour = Colour(self::raw::bright::GREEN);
+    pub const BRIGHT_YELLOW: Colour = Colour(self::raw::bright::YELLOW);
+    pub const BRIGHT_BLUE: Colour = Colour(self::raw::bright::BLUE);
+    pub const BRIGHT_MAGENTA: Colour = Colour(self::raw::bright::MAGENTA);
+    pub const BRIGHT_CYAN: Colour = Colour(self::raw::bright::CYAN);
+    pub const WHITE: Colour = Colour(self::raw::bright::WHITE);
+}
 
 #[cfg(test)]
 mod tests {
 
-    use Colour;
+    use AllColours;
 
     #[test]
     fn from_colour() {
-        for code in 0..256 {
-            let c : Colour = (code as u8).into();
+        for c in AllColours {
             c.typ();
         }
     }
 
     #[test]
     fn reflexive() {
-        for code in 0..256 {
-            let orig_c : Colour = (code as u8).into();
+        for orig_c in AllColours {
             let orig_t = orig_c.typ();
             let new_c = orig_t.colour();
             let new_t = new_c.typ();
