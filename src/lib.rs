@@ -248,7 +248,7 @@ pub const NUM_NORMAL_COLOURS: usize = 8;
 pub const NUM_BRIGHT_COLOURS: usize = 8;
 pub const NUM_RGB_COLOURS: usize = RGB_COUNT as usize;
 pub const NUM_GREY_SCALE_COLOURS: usize = GREY_SCALE_MAX_LEVEL as usize + 1;
-pub const NUM_RGB_COLOURS_PER_CHANNEL: usize = 5;
+pub const NUM_RGB_COLOURS_PER_CHANNEL: usize = RGB_FIELD_RANGE as usize;
 
 pub struct NormalColours;
 
