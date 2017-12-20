@@ -1,6 +1,7 @@
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     RangeError(u8),
 }
@@ -71,15 +72,14 @@ pub struct RgbColour {
     green: u8,
     blue: u8,
 }
-
 const RGB_START: u8 = 16;
 const RGB_MAX_FIELD: u8 = 5;
 const RGB_FIELD_RANGE: u8 = RGB_MAX_FIELD + 1;
 const RGB_COUNT: u8 = RGB_FIELD_RANGE * RGB_FIELD_RANGE * RGB_FIELD_RANGE;
 const RGB_END: u8 = RGB_START + RGB_COUNT - 1;
 
-const GREYSCALE_START: u8 = RGB_END + 1;
-const GREYSCALE_MAX_LEVEL: u8 = 23;
+const GREY_SCALE_START: u8 = RGB_END + 1;
+const GREY_SCALE_MAX_LEVEL: u8 = 23;
 
 impl RgbColour {
     pub fn red(self) -> u8 { self.red }
@@ -110,13 +110,13 @@ pub struct GreyScaleColour(u8);
 impl GreyScaleColour {
     pub fn level(self) -> u8 { self.0 }
     pub fn new(level: u8) -> Result<Self> {
-        if level > GREYSCALE_MAX_LEVEL {
+        if level > GREY_SCALE_MAX_LEVEL {
             return Err(Error::RangeError(level));
         }
         Ok(GreyScaleColour(level))
     }
     pub fn code(self) -> u8 {
-        GREYSCALE_START + self.0
+        GREY_SCALE_START + self.0
     }
 }
 
@@ -147,7 +147,7 @@ impl ColourVariant {
 pub struct Colour(u8);
 
 impl Colour {
-    pub fn greyscale(level: u8) -> Result<Self> {
+    pub fn grey_scale(level: u8) -> Result<Self> {
         Ok(Colour(GreyScaleColour::new(level)?.code()))
     }
     pub fn rgb(red: u8, green: u8, blue: u8) -> Result<Self> {
@@ -189,15 +189,15 @@ impl Colour {
                 let red = zero_based % RGB_FIELD_RANGE;
                 ColourVariant::Rgb(RgbColour{ red, green, blue })
             }
-            GREYSCALE_START...255 => {
-                let zero_based = self.0 - GREYSCALE_START;
+            GREY_SCALE_START...255 => {
+                let zero_based = self.0 - GREY_SCALE_START;
                 ColourVariant::GreyScale(GreyScaleColour(zero_based))
             }
             _ => unreachable!(),
         }
     }
     pub fn all() -> ColourIter {
-        ColourIter::new()
+        AllColours.into_iter()
     }
 }
 
@@ -227,12 +227,6 @@ impl From<u8> for Colour {
 
 pub struct ColourIter(::std::ops::Range<u16>);
 
-impl ColourIter {
-    fn new() -> Self {
-        ColourIter(0..256)
-    }
-}
-
 impl Iterator for ColourIter {
     type Item = Colour;
     fn next(&mut self) -> Option<Self::Item> {
@@ -246,7 +240,53 @@ impl IntoIterator for AllColours {
     type Item = Colour;
     type IntoIter = ColourIter;
     fn into_iter(self) -> Self::IntoIter {
-        ColourIter::new()
+        ColourIter(0..256)
+    }
+}
+
+pub const NUM_NORMAL_COLOURS: usize = 8;
+pub const NUM_BRIGHT_COLOURS: usize = 8;
+pub const NUM_RGB_COLOURS: usize = RGB_COUNT as usize;
+pub const NUM_GREY_SCALE_COLOURS: usize = GREY_SCALE_MAX_LEVEL as usize + 1;
+pub const NUM_RGB_COLOURS_PER_CHANNEL: usize = 5;
+
+pub struct NormalColours;
+
+impl IntoIterator for NormalColours {
+    type Item = Colour;
+    type IntoIter = ColourIter;
+    fn into_iter(self) -> Self::IntoIter {
+        ColourIter(0..(NUM_NORMAL_COLOURS as u16))
+    }
+}
+
+pub struct BrightColours;
+
+impl IntoIterator for BrightColours {
+    type Item = Colour;
+    type IntoIter = ColourIter;
+    fn into_iter(self) -> Self::IntoIter {
+        ColourIter((NUM_NORMAL_COLOURS as u16)..((NUM_NORMAL_COLOURS + NUM_BRIGHT_COLOURS) as u16))
+    }
+}
+
+pub struct RgbColours;
+
+impl IntoIterator for RgbColours {
+    type Item = Colour;
+    type IntoIter = ColourIter;
+    fn into_iter(self) -> Self::IntoIter {
+        ColourIter((RGB_START as u16)..(RGB_START as u16 + NUM_RGB_COLOURS as u16))
+    }
+}
+
+pub struct GreyScaleColours;
+
+impl IntoIterator for GreyScaleColours {
+    type Item = Colour;
+    type IntoIter = ColourIter;
+    fn into_iter(self) -> Self::IntoIter {
+        ColourIter((GREY_SCALE_START as u16)..(GREY_SCALE_START as u16 + NUM_GREY_SCALE_COLOURS as u16))
     }
 }
 
@@ -300,7 +340,13 @@ pub mod colours {
 #[cfg(test)]
 mod tests {
 
-    use AllColours;
+    use {
+        AllColours,
+        NUM_NORMAL_COLOURS,
+        NUM_BRIGHT_COLOURS,
+        NUM_RGB_COLOURS,
+        NUM_GREY_SCALE_COLOURS,
+    };
 
     #[test]
     fn from_colour() {
@@ -319,5 +365,12 @@ mod tests {
             assert_eq!(orig_t, new_t);
             assert_eq!(orig_c, new_c);
         }
+    }
+
+    #[test]
+    fn num_colours() {
+        const NUM_COLOURS: usize = 256;
+        assert_eq!(NUM_NORMAL_COLOURS + NUM_BRIGHT_COLOURS +
+                   NUM_RGB_COLOURS + NUM_GREY_SCALE_COLOURS, NUM_COLOURS);
     }
 }
