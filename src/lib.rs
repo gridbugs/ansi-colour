@@ -250,6 +250,7 @@ pub const NUM_RGB_COLOURS: usize = RGB_COUNT as usize;
 pub const NUM_GREY_SCALE_COLOURS: usize = GREY_SCALE_MAX_LEVEL as usize + 1;
 pub const NUM_RGB_COLOURS_PER_CHANNEL: usize = RGB_FIELD_RANGE as usize;
 pub const MAX_RGB_CHANNEL: usize = RGB_MAX_FIELD as usize;
+pub const MAX_GREY_SCALE: usize = GREY_SCALE_MAX_LEVEL as usize;
 
 pub struct NormalColours;
 
