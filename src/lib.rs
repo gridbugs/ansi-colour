@@ -1,6 +1,6 @@
-extern crate serde;
+#[cfg(feature = "serde")]
 #[macro_use]
-extern crate serde_derive;
+extern crate serde;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
@@ -8,7 +8,8 @@ pub enum Error {
 }
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum NormalColour {
     Black,
     Red,
@@ -22,8 +23,8 @@ pub enum NormalColour {
 
 impl NormalColour {
     pub fn code(self) -> u8 {
-        use self::NormalColour::*;
         use self::raw::normal::*;
+        use self::NormalColour::*;
         match self {
             Black => BLACK,
             Red => RED,
@@ -37,7 +38,8 @@ impl NormalColour {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BrightColour {
     DarkGrey,
     Red,
@@ -51,8 +53,8 @@ pub enum BrightColour {
 
 impl BrightColour {
     pub fn code(self) -> u8 {
-        use self::BrightColour::*;
         use self::raw::bright::*;
+        use self::BrightColour::*;
         match self {
             DarkGrey => DARK_GREY,
             Red => RED,
@@ -66,7 +68,8 @@ impl BrightColour {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct RgbColour {
     red: u8,
     green: u8,
@@ -104,12 +107,15 @@ impl RgbColour {
         Ok(Self { red, green, blue })
     }
     pub fn code(self) -> u8 {
-        RGB_START + (RGB_FIELD_RANGE * RGB_FIELD_RANGE) * self.red + RGB_FIELD_RANGE * self.green
+        RGB_START
+            + (RGB_FIELD_RANGE * RGB_FIELD_RANGE) * self.red
+            + RGB_FIELD_RANGE * self.green
             + self.blue
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct GreyScaleColour(u8);
 
 impl GreyScaleColour {
@@ -127,7 +133,8 @@ impl GreyScaleColour {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ColourVariant {
     Normal(NormalColour),
     Bright(BrightColour),
@@ -150,7 +157,8 @@ impl ColourVariant {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Colour(u8);
 
 impl Colour {
@@ -330,8 +338,8 @@ mod raw {
 
 pub mod colours {
 
-    use Colour;
     use raw;
+    use Colour;
 
     pub const BLACK: Colour = Colour(self::raw::normal::BLACK);
     pub const RED: Colour = Colour(self::raw::normal::RED);
@@ -354,9 +362,9 @@ pub mod colours {
 
 #[cfg(test)]
 mod tests {
-
-    use {AllColours, NUM_BRIGHT_COLOURS, NUM_GREY_SCALE_COLOURS, NUM_NORMAL_COLOURS,
-         NUM_RGB_COLOURS};
+    use {
+        AllColours, NUM_BRIGHT_COLOURS, NUM_GREY_SCALE_COLOURS, NUM_NORMAL_COLOURS, NUM_RGB_COLOURS,
+    };
 
     #[test]
     fn from_colour() {
