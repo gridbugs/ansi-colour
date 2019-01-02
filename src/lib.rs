@@ -1,4 +1,4 @@
-#[cfg(feature = "serde")]
+#[cfg(feature = "serialize")]
 #[macro_use]
 extern crate serde;
 
@@ -8,7 +8,7 @@ pub enum Error {
 }
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum NormalColour {
     Black,
@@ -38,7 +38,7 @@ impl NormalColour {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BrightColour {
     DarkGrey,
@@ -68,7 +68,7 @@ impl BrightColour {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct RgbColour {
     red: u8,
@@ -114,7 +114,7 @@ impl RgbColour {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct GreyScaleColour(u8);
 
@@ -133,7 +133,7 @@ impl GreyScaleColour {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ColourVariant {
     Normal(NormalColour),
@@ -157,7 +157,7 @@ impl ColourVariant {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Colour(u8);
 
