@@ -1,6 +1,9 @@
+extern crate rgb24;
 #[cfg(feature = "serialize")]
 #[macro_use]
 extern crate serde;
+
+pub use rgb24::Rgb24;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
@@ -85,13 +88,13 @@ const GREY_SCALE_START: u8 = RGB_END + 1;
 const GREY_SCALE_MAX_LEVEL: u8 = 23;
 
 impl RgbColour {
-    pub fn red(self) -> u8 {
+    pub const fn red(self) -> u8 {
         self.red
     }
-    pub fn green(self) -> u8 {
+    pub const fn green(self) -> u8 {
         self.green
     }
-    pub fn blue(self) -> u8 {
+    pub const fn blue(self) -> u8 {
         self.blue
     }
     pub fn new(red: u8, green: u8, blue: u8) -> Result<Self> {
@@ -106,11 +109,21 @@ impl RgbColour {
         }
         Ok(Self { red, green, blue })
     }
-    pub fn code(self) -> u8 {
+    pub const fn code(self) -> u8 {
         RGB_START
             + (RGB_FIELD_RANGE * RGB_FIELD_RANGE) * self.red
             + RGB_FIELD_RANGE * self.green
             + self.blue
+    }
+    pub const fn from_rgb24_components(red: u8, green: u8, blue: u8) -> Self {
+        Self {
+            red: ((red as u32 * RGB_MAX_FIELD as u32) / 255 as u32) as u8,
+            green: ((green as u32 * RGB_MAX_FIELD as u32) / 255 as u32) as u8,
+            blue: ((blue as u32 * RGB_MAX_FIELD as u32) / 255 as u32) as u8,
+        }
+    }
+    pub const fn from_rgb24(rgb24: Rgb24) -> Self {
+        Self::from_rgb24_components(rgb24.r, rgb24.g, rgb24.b)
     }
 }
 
@@ -119,7 +132,7 @@ impl RgbColour {
 pub struct GreyScaleColour(u8);
 
 impl GreyScaleColour {
-    pub fn level(self) -> u8 {
+    pub const fn level(self) -> u8 {
         self.0
     }
     pub fn new(level: u8) -> Result<Self> {
@@ -128,7 +141,7 @@ impl GreyScaleColour {
         }
         Ok(GreyScaleColour(level))
     }
-    pub fn code(self) -> u8 {
+    pub const fn code(self) -> u8 {
         GREY_SCALE_START + self.0
     }
 }
@@ -144,7 +157,7 @@ pub enum ColourVariant {
 
 impl ColourVariant {
     pub fn code(self) -> u8 {
-        use self::ColourVariant::*;
+        use ColourVariant::*;
         match self {
             Normal(c) => c.code(),
             Bright(c) => c.code(),
@@ -155,6 +168,20 @@ impl ColourVariant {
     pub fn colour(self) -> Colour {
         Colour(self.code())
     }
+    pub const fn from_rgb24_components(red: u8, green: u8, blue: u8) -> Self {
+        ColourVariant::Rgb(RgbColour::from_rgb24_components(red, green, blue))
+    }
+    pub const fn from_rgb24(rgb24: Rgb24) -> Self {
+        ColourVariant::Rgb(RgbColour::from_rgb24(rgb24))
+    }
+}
+
+pub const fn encode_rgb24_components(red: u8, green: u8, blue: u8) -> u8 {
+    RgbColour::from_rgb24_components(red, green, blue).code()
+}
+
+pub const fn encode_rgb24(rgb24: Rgb24) -> u8 {
+    RgbColour::from_rgb24(rgb24).code()
 }
 
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
@@ -174,10 +201,10 @@ impl Colour {
     pub fn bright(bright_colour: BrightColour) -> Self {
         Colour(bright_colour.code())
     }
-    pub fn code(self) -> u8 {
+    pub const fn code(self) -> u8 {
         self.0
     }
-    pub fn from_code(code: u8) -> Self {
+    pub const fn from_code(code: u8) -> Self {
         Colour(code)
     }
     pub fn typ(self) -> ColourVariant {
@@ -217,6 +244,12 @@ impl Colour {
     }
     pub fn all() -> ColourIter {
         AllColours.into_iter()
+    }
+    pub const fn from_rgb24_components(red: u8, green: u8, blue: u8) -> Self {
+        Colour(encode_rgb24_components(red, green, blue))
+    }
+    pub const fn from_rgb24(rgb24: Rgb24) -> Self {
+        Colour(encode_rgb24(rgb24))
     }
 }
 
